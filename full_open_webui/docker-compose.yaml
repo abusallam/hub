@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:ollama
+    container_name: open-webui
+    volumes:
+      - open_webui_data:/app/backend/data
+    ports:
+      - "3000:8080"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_API_BASE_URL=http://ollama:11434/api
+    restart: unless-stopped
+
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:latest
+    container_name: pipelines
+    volumes:
+      - pipelines_data:/app/pipelines/data
+    depends_on:
+      - open-webui
+    ports:
+      - "5000:5000"  # Assuming the pipelines service exposes this port
+    environment:
+      - WEBUI_URL=http://open-webui:8080  # Link pipelines with the Open WebUI service
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  open_webui_data:
+  pipelines_data:
+
